@@ -1,0 +1,13 @@
+name = "PlanarFields"
+uuid = "e0a000d8-01d3-433d-a5ed-ef44dba54cbc"
+authors = ["Éric Thiébaut <eric.thiebaut@univ-lyon1.fr> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

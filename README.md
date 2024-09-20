@@ -1,0 +1,1 @@
+# PlanarFields [![Build Status](https://github.com/emmt/PlanarFields.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/emmt/PlanarFields.jl/actions/workflows/CI.yml?query=branch%3Amain) [![Coverage](https://codecov.io/gh/emmt/PlanarFields.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/emmt/PlanarFields.jl)
