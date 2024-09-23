@@ -21,6 +21,7 @@ using Base: axes1
 using Base.Broadcast: broadcasted
 
 include("types.jl")
+include("utils.jl")
 include("grids.jl")
 include("fields.jl")
 

@@ -87,7 +87,7 @@ end
 # that the offset is a multiple of the step.
 Broadcast.broadcasted(::typeof(+), off::Number, A::GridAxis) = broadcasted(+, A, off)
 function Broadcast.broadcasted(::typeof(+), A::GridAxis, off::Number)
-    off, stp = to_same_type(off, step(A))
+    off, stp = to_same_concrete_type(off, step(A))
     if bare_type(off) <: Integer
         iszero(rem(off, stp)) || error("offset is not a multiple of the step")
         i = div(off, stp)
@@ -111,26 +111,7 @@ Broadcast.broadcasted(::typeof(+), A::Grid, off::Point) =
 Base.:(+)(off::Point, A::Grid) = broadcasted(+, A, off)
 Base.:(+)(A::Grid, off::Point) = Grid(A.X .+ off.x, A.Y .+ off.y)
 
-# promote(x, y) does not warrant that the converted values have the same type...
-@inline to_same_type(x::T, y::T) where {T} = (x, y)
-@inline to_same_type(x::T, y::S) where {T,S} = begin
-    R = promote_type(T, S)
-    xp, yp = convert(R, x), convert(R, y)
-    typeof(xp) === typeof(yp) || incompatible_types(T, S)
-    return (xp, yp)
-end
-
-@noinline incompatible_types(::Type{T}, ::Type{S}) where {T,S} =
-     error("incompatible types `$T` and `$S`")
-
 step_tolerance(step::Number) = eps(floating_point_type(step))*abs(step)
-
-nearly_equal(x::T, y::T) where {T<:Integer} = x == y
-nearly_equal(x::T, y::T) where {T<:Rational} = x == y
-nearly_equal(x::T, y::T) where {T<:AbstractFloat} = nearly_equal(x, y, eps(T))
-nearly_equal(x::T, y::T) where {T<:Real} = nearly_equal(x, y, eps(Float64))
-nearly_equal(x::T, y::T, rtol::AbstractFloat) where {T<:Real} =
-    x == y || abs(x - y) < rtol*max(abs(x), abs(y))
 
 # Extend element type conversion by `map` or by broadcasted call to Point type
 # constructor.
@@ -233,7 +214,6 @@ end
 # Extend methods from other packages.
 TwoDimensional.coord_type(G::Grid) = coord_type(typeof(G))
 TwoDimensional.coord_type(::Type{<:Grid{T}}) where {T} = T
-
 
 """
     Grid{T}(step, arr) -> G
