@@ -65,6 +65,20 @@ converted to a bare numerical type.
 """
 const Dimensionless{T} = Union{T,Unitful.Quantity{<:T,Unitful.NoDims}}
 
+"""
+    GridAxis{T}
+
+is the type of abstract ranges used to represent coordinates along Cartesian axes of grids
+of equally spaced nodes. Type parameter `T` is the element-type of the range.
+
+Compared to other base abstract range types, the indices of grid axes are not necessarily
+1-based and their value is always given by multipying the index by the step: `A[i] ===
+step(A)*i` holds for any valid index `i` of a grid axis `A`. This property is fundamental
+to simplify checking whether fields sampled on grids of equally spaced nodes are
+compatible (the steps and index ranges of the combined fields must match) and applying
+discrete transforms on such fields.
+
+"""
 struct GridAxis{T<:Number,I<:ArrayAxis} <: AbstractRange{T}
     step::T
     inds::I
