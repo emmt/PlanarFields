@@ -74,7 +74,7 @@ Base.similar(A::PlanarField, inds::NTuple{2,Union{Integer,ArrayAxisLike}}; kwds.
     similar(A, eltype(A), inds; kwds...)
 function Base.similar(A::PlanarField, ::Type{T}, inds::NTuple{2,Union{Integer,ArrayAxisLike}};
                       step::Number = step(A)) where {T}
-    return PlanarField{T}(Grid(step, to_axes(dims)))
+    return PlanarField{T}(Grid(step, to_axes(inds)))
 end
 
 # Retrieve the grid of the nodes.
