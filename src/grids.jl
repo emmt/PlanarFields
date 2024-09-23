@@ -303,7 +303,11 @@ helper function is needed by the inner constructors of [`GridAxis`](@ref) and of
 
 """
 @inline promote_step_type(step::Number) = promote_step_type(typeof(step))
-@inline promote_step_type(::Type{T}) where {T<:Number} = typeof(zero(Int)*zero(T))
+@generated function promote_step_type(::Type{T}) where {T<:Number}
+    S = typeof(zero(Int)*zero(T))
+    -oneunit(S) < zero(S) || throw(ArgumentError("grid step type `T = $T` is unsigned"))
+    return S
+end
 
 """
     PlanarFields.check_step_type(step)
@@ -315,10 +319,12 @@ helper function is needed by the inner constructors of [`GridAxis`](@ref) and of
 
 """
 @inline check_step_type(step::Number) = check_step_type(typeof(step))
-@inline function check_step_type(::Type{T}) where {T<:Number}
+@generated function check_step_type(::Type{T}) where {T<:Number}
     isconcretetype(T) || throw(ArgumentError("grid step type `T = $T` is not a concrete type"))
     T === typeof(zero(Int)*zero(T)) || throw(ArgumentError(
             "grid step type `T = $T` is not stable by the multiplication by an `Int`"))
+    -oneunit(T) < zero(T) || throw(ArgumentError("grid step type `T = $T` is unsigned"))
+    return nothing
 end
 
 """
