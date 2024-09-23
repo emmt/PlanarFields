@@ -50,6 +50,14 @@ end
 TwoDimensional.coord_type(A::GridAxis) = coord_type(typeof(A))
 TwoDimensional.coord_type(::Type{<:GridAxis{T}}) where {T} = T
 
+# Unary plus.
+Base.:(+)(A::GridAxis) = A
+Base.:(+)(A::Grid) = A
+
+# Unary minus does not change the indices, only the sign of the step.
+Base.:(-)(A::GridAxis) = GridAxis(-step(A), eachindex(A))
+Base.:(-)(A::Grid) = Grid(-step(A), axes(A))
+
 # Extend element type conversion by `map` or by broadcasted call to numeric type
 # constructor.
 Broadcast.broadcasted(::Type{T}, A::GridAxis) where {T<:Number} = map(T, A)
@@ -91,6 +99,10 @@ function Broadcast.broadcasted(::typeof(+), A::GridAxis, off::Number)
     end
     return GridAxis(stp, eachindex(A) .+ i)
 end
+
+# Broadcasted subtraction of a number.
+Broadcast.broadcasted(::typeof(-), off::Number, A::GridAxis) = broadcasted(+, off, -A)
+Broadcast.broadcasted(::typeof(-), A::GridAxis, off::Number) = broadcasted(+, A, -off)
 
 # Broadcasted addition of a point to a grid.
 Broadcast.broadcasted(::typeof(+), off::Point, A::Grid) = broadcasted(+, A, off)
