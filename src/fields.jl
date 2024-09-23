@@ -117,3 +117,79 @@ end
     @inbounds setindex!(mask(A), x, I...)
     return A
 end
+
+# Implement broadcasting for planar fields (see Julia doc. "Interfaces, Customizing
+# broadcasting"). This turns out to be quite simple: we define a custom broadcast style
+# and extend `similar` for that broadcasting style so as to determine the common step of
+# the broadcast arguments.
+Base.BroadcastStyle(::Type{<:PlanarField}) = Broadcast.ArrayStyle{PlanarField}()
+function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{PlanarField}},
+                      ::Type{T}) where {T}
+    # Scan the inputs for the grid step.
+    stp = broadcast_step(bc)
+    return PlanarField{T}(axes(bc); step = stp)
+end
+
+# Find suitable common step in broadcasting.
+broadcast_step(bc::Base.Broadcast.Broadcasted) = broadcast_step(nothing, bc.args)
+broadcast_step(s::Union{Nothing,Number}, args::Tuple) = broadcast_step(broadcast_step(s, args[1]), Base.tail(args))
+broadcast_step(s::Union{Nothing,Number}, A::Number) = s
+broadcast_step(s::Nothing, A::PlanarField) = step(A)
+broadcast_step(s::Number, A::PlanarField) = common_step(s, step(A))
+broadcast_step(s::Union{Nothing,Number}, ::Tuple{}) = s
+broadcast_step(s::Union{Nothing,Number}, A::Any) = throw(ArgumentError(
+    "planar fields can only be combined with planar fields and numbers, got instance of `$(typeof(A))`"))
+
+"""
+    PlanarFields.common_step(s1, s2) -> s
+
+yields the step `s` resulting from combining two grids, grid axes, or planar fields with
+steps `s1` and `s2`. The result `s` has the concrete promoted type of `s1` and `s2` and
+the value of the most precise of `s1` and `s2` (the average of `s1` and `s2` is returned
+if they are different but have the same precision). An exception is thrown if `s1` and `s2`
+cannot be converted to a common concrete type or if `s1` and `s2` are not nearly the same
+(relative to the worst precision of the two).
+
+Arguments may also be two instances of objects having a defined grid step.
+
+"""
+function common_step(s1::T1, s2::T2) where {T1<:Number,T2<:Number}
+    T = to_same_concrete_type(T1, T2) # type of the result
+    r1, r2 = as(T, s1), as(T, s2)
+    if r1 === r2
+        return r1
+    else
+        R1, R2 = bare_type(T1), bare_type(T2)
+        if !((R1 <: Union{Integer,Rational}) & (R1 <: Union{Integer,Rational}))
+            # At least one of the steps is floating-point or irrational.
+            prec1, prec2 = relative_precision(R1), relative_precision(R2)
+            if prec1 < prec2
+                # s1 has the strictly highest precision
+                if abs(r1 - r2) ≤ prec2*max(abs(r1), abs(r2))
+                    return r1
+                end
+            elseif abs(r1 - r2) ≤ prec1*max(abs(r1), abs(r2))
+                if prec2 < prec1
+                    return r2
+                else
+                    return as(T, (r1 + r2)/2)
+                end
+            end
+        end
+    end
+    throw_not_nearly_equal_steps(s1, s2)
+end
+
+@noinline throw_not_nearly_equal_steps(s::Number...) =
+    throw(ArgumentError("steps are not nearly equal"))
+
+common_step(A::WithStep, B::WithStep) = common_step(step(A), step(B))
+
+nearly_same_step(A::WithStep) = true
+nearly_same_step(A::WithStep, B::WithStep) = nearly_same_step(step(A), step(B))
+function nearly_same_step(a::Number, b::Number)
+    a == b && return true
+    # consider the worst relative precision of the two
+    e = max(relative_precision(a), relative_precision(b))
+    return abs(a - b) ≤ e*max(abs(a), abs(b))
+end

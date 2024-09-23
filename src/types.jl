@@ -99,3 +99,6 @@ struct PlanarField{T,S<:Number,L,A<:AbstractArray{T,2}} <: AbstractArray{T,2}
         return new{T,S,L,A}(vals, step)
     end
 end
+
+# Union of types having a given step.
+const WithStep = Union{GridAxis,Grid,PlanarField}
