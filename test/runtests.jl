@@ -33,7 +33,10 @@ using Test
         @test A === @inferred convert(GridAxis{eltype(A)}, A)
 
         B = @inferred GridAxis{Float32}(A)
-        @test B === convert(GridAxis{Float32}, A)
+        @test B === @inferred convert(GridAxis{Float32}, A)
+        @test B === @inferred GridAxis{Float32}(rng; step=stp)
+        @test B === @inferred GridAxis{Float32}(rng, stp)
+        @test B === @inferred GridAxis{Float32}(stp, rng)
         @test B isa AbstractRange{Float32}
         @test eltype(B) === Float32
         @test length(B) == length(A)
