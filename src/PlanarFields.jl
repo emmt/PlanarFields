@@ -15,7 +15,7 @@ using Unitful:
     km, m, cm, mm, µm, nm
 
 using TwoDimensional
-using TwoDimensional: ShapeElement, dot, ⋅
+using TwoDimensional: Mask, MaskElement, ShapeElement, dot, ⋅
 
 using Base: axes1
 using Base.Broadcast: broadcasted

@@ -193,3 +193,90 @@ function nearly_same_step(a::Number, b::Number)
     e = max(relative_precision(a), relative_precision(b))
     return abs(a - b) ≤ e*max(abs(a), abs(b))
 end
+
+"""
+    PlanarField{T,S}(mask; step, kwds...)
+    PlanarField{T,S}(mask, step; kwds...)
+    PlanarField{T,S}(step, mask; kwds...)
+
+Create a planar fields from a 2-dimensional `mask` by sampling the mask over a grid of
+equally spaced nodes. The grid spacing, `step`, is specified as a positional argument or
+as a keyword.
+
+If `S`, the coordinate type, is not specified, `S = typeof(step)` is assumed.
+
+If `T`, the field element type, is not specified, `S = floating_point_type(step)` is
+assumed.
+
+The bounding-box of the mask and the node spacing are used to determine the indices of the
+grid as follows:
+
+   grid = Grid{S}(mask; step=step, margins=margins)
+
+where keyword `margins` is an optional keywords. Other keywords are passed to
+`TwoDimensional.forge_mask!`.
+
+"""
+function PlanarField(mask::Union{MaskElement,Mask}; step::Number, kwds...)
+    T = floating_point_type(step)
+    return PlanarField{T}(mask; step = step, kwds...)
+end
+
+PlanarField(mask::Union{MaskElement,Mask}, step::Number; kwds...) =
+    PlanarField(mask; step = step, kwds...)
+
+PlanarField(step::Number, mask::Union{MaskElement,Mask}; kwds...) =
+    PlanarField{T}(mask; step = step, kwds...)
+
+function PlanarField{T}(mask::Union{MaskElement,Mask}; step::Number, kwds...) where {T}
+    S = typeof(step)
+    return PlanarField{T,S}(mask; step = step, kwds...)
+end
+
+PlanarField{T}(mask::Union{MaskElement,Mask}, step::Number; kwds...) where {T} =
+    PlanarField{T}(mask; step = step, kwds...)
+
+PlanarField{T}(step::Number, mask::Union{MaskElement,Mask}; kwds...) where {T} =
+    PlanarField{T}(mask; step = step, kwds...)
+
+function PlanarField{T,S}(mask::Union{MaskElement,Mask}; step::Number,
+                          margins=1//2, kwds...) where {T,S<:Number}
+    box = BoundingBox(mask)
+    grid = Grid{S}(box; step=step, margins=margins)
+    return  PlanarField{T}(grid, mask; kwds...)
+end
+
+PlanarField{T,S}(mask::Union{MaskElement,Mask}, step::Number; kwds...) where {T,S<:Number} =
+    PlanarField{T,S}(mask; step = step, kwds...)
+
+PlanarField{T,S}(step::Number, mask::Union{MaskElement,Mask}; kwds...) where {T,S<:Number} =
+    PlanarField{T,S}(mask; step = step, kwds...)
+
+"""
+    PlanarField{T,S}(grid, mask; kwds...)
+    PlanarField{T,S}(mask, grid; kwds...)
+
+Create a planar fields from a 2-dimensional `mask` by sampling the mask over the given `grid` of
+equally spaced nodes.
+
+If `S`, the coordinate type, is not specified, `S = coord_type(grid)` is assumed.
+
+If `T`, the field element type, is not specified, `S = floating_point_type(step)` is
+assumed.
+
+Keywords `kwds...` are passed to `TwoDimensional.forge_mask!`.
+
+"""
+PlanarField{T,S}(grid::Grid, mask::Union{MaskElement,Mask}; kwds...) where {T,S<:Number} =
+    PlanarField{T}(Grid{S}(grid), mask; kwds...)
+
+PlanarField{T,S}(mask::Union{MaskElement,Mask}, grid::Grid; kwds...) where {T,S<:Number} =
+    PlanarField{T,S}(grid, mask; kwds...)
+
+function PlanarField{T}(grid::Grid, mask::Union{MaskElement,Mask}; kwds...) where {T}
+    A = PlanarField{T}(grid)
+    return forge_mask!(A, grid.X, grid.Y, mask; kwds...)
+end
+
+PlanarField{T}(mask::Union{MaskElement,Mask}, grid::Grid; kwds...) where {T} =
+    PlanarField{T}(grid, mask; kwds...)
